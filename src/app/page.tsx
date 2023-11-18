@@ -20,57 +20,72 @@ import {
   restrictToVerticalAxis,
   restrictToParentElement,
 } from '@dnd-kit/modifiers';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import SortableLinks from '@/components/SortableLinks';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { AddNewItem } from '@/components/AddNewItem';
+import { updateTasks, fetchTasks } from '@/firebase/queries/todoListQueries';
 
-// Define the item interface
 interface Item {
   name: string;
   id: number;
+  isDone: boolean
 }
 
-interface HomeProps {
-  // You can add any additional props if needed
-}
-
-const Home: React.FC<HomeProps> = () => {
+const Home = () => {
+  //isdone
+  //zasah
   const sensors = useSensors(
     useSensor(PointerSensor),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
     })
   );
+  const [items, setItems] = useState<Item[]>([]);
 
-  const [items, setItems] = useState<Item[]>([
-    { name: 'NextJS', id: 1693653637084 },
-    { name: 'ReactJS', id: 1693653637086 },
-    { name: 'Astro', id: 1693653637088 },
-    { name: 'Vue', id: 1693653637090 },
-  ]);
+  useEffect(() => {
+    fetchTasks(setItems)
+  }, [])
 
-  function handleDragEnd(event: any) {
+  const handleDragEnd = (event: any) => {
     const { active, over } = event;
-
+    const oldIndex = items.findIndex((item) => item.id === active.id);
+    const newIndex = items.findIndex((item) => item.id === over.id);
+    updateTasks(arrayMove(items, oldIndex, newIndex))
     if (active.id !== over.id) {
       setItems((prevItems) => {
-        const oldIndex = prevItems.findIndex((item) => item.id === active.id);
-        const newIndex = prevItems.findIndex((item) => item.id === over.id);
-
         return arrayMove(prevItems, oldIndex, newIndex);
       });
     }
   }
 
-  function handleDelete(idToDelete: number) {
-    setItems((prevItems) => prevItems.filter((item) => item.id !== idToDelete));
+  const handleDelete = (idToDelete: number) => {
+    const newItems = items.filter((item) => item.id !== idToDelete)
+    setItems(newItems);
+    updateTasks(newItems)
   }
-
+  const handleDone = (idToMakeDone: number) => {
+    const updatedItems = items.map(item => {
+      if (item.id === idToMakeDone) {
+        return { ...item, isDone: true };
+      }
+      return item;
+    });
+    setItems(updatedItems);
+    updateTasks(updatedItems);
+  }
   let idx = Date.now();
 
-  function addNewItem(newItem: string) {
-    setItems((prevItems) => [...prevItems, { name: newItem, id: idx }]);
+  const addNewItem = (newItem: string) => {
+    setItems((prevItems) => [...prevItems, { name: newItem, id: idx, isDone: false }]);
+    updateTasks([...items, { name: newItem, id: idx, isDone: false }])
+  }
+  const handleEdit = (idToEdit: number, newItemValue: Item) => {
+    const updatedItems = items.map(item =>
+      item.id === idToEdit ? newItemValue : item
+    );
+    setItems(updatedItems)
+    updateTasks(updatedItems)
   }
 
   return (
@@ -78,10 +93,10 @@ const Home: React.FC<HomeProps> = () => {
       <Card className='w-full md:max-w-lg'>
         <CardHeader className='space-y-1 '>
           <CardTitle className='text-2xl flex justify-between'>
-            Frameworks
+            TODO's
             <AddNewItem addNewItem={addNewItem} />
           </CardTitle>
-          <CardDescription>List Popular web development frameworks</CardDescription>
+          <CardDescription>My TODO list for morphosis</CardDescription>
         </CardHeader>
         <CardContent className='grid gap-4'>
           <DndContext
@@ -92,7 +107,7 @@ const Home: React.FC<HomeProps> = () => {
           >
             <SortableContext items={items} strategy={verticalListSortingStrategy}>
               {items.map((item) => (
-                <SortableLinks key={item.id} id={item} onDelete={handleDelete} />
+                <SortableLinks key={item.id} id={item} handleEdit={handleEdit} onDone={handleDone} onDelete={handleDelete} />
               ))}
             </SortableContext>
           </DndContext>

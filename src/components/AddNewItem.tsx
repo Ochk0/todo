@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/input"
 import { Plus } from "lucide-react"
 import React from 'react'
 
-export function AddNewItem({ addNewItem }: { addNewItem: any }) {
+export const AddNewItem = ({ addNewItem }: { addNewItem: any }) => {
     const [itemName, setItemName] = React.useState("");
 
     const handleSubmit = () => {

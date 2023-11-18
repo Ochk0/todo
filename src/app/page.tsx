@@ -93,7 +93,7 @@ const Home = () => {
       <Card className='w-full md:max-w-lg'>
         <CardHeader className='space-y-1 '>
           <CardTitle className='text-2xl flex justify-between'>
-            TODO's
+            TODO app
             <AddNewItem addNewItem={addNewItem} />
           </CardTitle>
           <CardDescription>My TODO list for morphosis</CardDescription>
